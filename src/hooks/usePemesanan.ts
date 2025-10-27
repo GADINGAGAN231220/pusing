@@ -1,19 +1,15 @@
-// usePemesanan.ts
-import { useState, useMemo, useEffect } from 'react';
+// src/hooks/usePemesanan.ts
+
+import { useState, useMemo } from 'react'; // Hapus useEffect yang tidak terpakai
+// Import fungsi toast yang sebenarnya dari shadcn/ui
+import { toast as showToast } from '@/components/ui/use-toast'; 
 
 // --- TIPE DATA DARI pemesanandashboard.tsx ---
 interface KonsumsiItem {
-  id: string; // ID dari MASTER_KONSUMSI
-  jenis: string; // Nama jenis konsumsi (di-populate saat submit)
-  qty: string; // Quantity dalam bentuk string untuk validasi form
+  id: string; 
+  jenis: string; 
+  qty: string; 
 }
-
-interface Konsumsi {
-  jenis: string;
-  qty: number;
-  satuan: string;
-}
-
 type Status = 'Menunggu' | 'Disetujui' | 'Ditolak';
 
 interface StatusHistoryItem {
@@ -22,19 +18,25 @@ interface StatusHistoryItem {
   oleh: string; 
 }
 
+interface Konsumsi {
+  jenis: string;
+  qty: number;
+  satuan: string;
+}
+
 interface Pemesanan {
   id: string;
   acara: string;
   tanggal: string; 
   waktu: string; 
-  jamPengiriman: string; // Tambahkan ini dari form
+  jamPengiriman: string; 
   lokasi: string;
-  tamu: string; // Sesuaikan dengan form 'standar'|'reguler'|...
+  tamu: string; 
   yangMengajukan: string;
   untukBagian: string;
   approval: string;
   status: Status;
-  konsumsi: Konsumsi[]; // Sudah diconvert ke format dashboard
+  konsumsi: Konsumsi[]; 
   catatan?: string;
   statusHistory: StatusHistoryItem[];
   createdAt: number; 
@@ -55,7 +57,7 @@ interface FormValues {
   catatan: string;
 }
 
-// Dummy data dari pemesanandashboard.tsx (disesuaikan)
+// Dummy data
 const getCurrentDateFormatted = () => new Date().toISOString().slice(0, 10);
 const getYesterdayDateFormatted = () => {
   const d = new Date();
@@ -69,16 +71,16 @@ const initialPemesananList: Pemesanan[] = [
     id: 'ORD001',
     acara: 'Rapat Koordinasi Mingguan',
     tanggal: getCurrentDateFormatted(),
-    waktu: '10:00',
+    waktu: 'Pagi',
     jamPengiriman: '10:00',
     lokasi: 'Ruang Meeting Utama Lantai 3',
-    tamu: 'standar', // Disamakan dengan format form
+    tamu: 'standar', 
     yangMengajukan: 'Budi Santoso',
     untukBagian: 'Divisi Pemasaran',
     approval: 'Dewi Rahayu',
     status: 'Menunggu',
     konsumsi: [
-      { jenis: 'Nasi Kotak Standar', qty: 30, satuan: 'Pcs' },
+      { jenis: 'Nasi Box Standar', qty: 30, satuan: 'Pcs' },
       { jenis: 'Air Mineral 600ml', qty: 30, satuan: 'Botol' },
     ],
     catatan: 'Permintaan teh manis hangat untuk 5 orang khusus.',
@@ -91,7 +93,7 @@ const initialPemesananList: Pemesanan[] = [
     id: 'ORD002',
     acara: 'Kunjungan Mitra Internasional',
     tanggal: getCurrentDateFormatted(),
-    waktu: '14:30',
+    waktu: 'Siang',
     jamPengiriman: '14:30',
     lokasi: 'Lounge Eksekutif',
     tamu: 'vip', 
@@ -112,19 +114,6 @@ const initialPemesananList: Pemesanan[] = [
   },
 ];
 
-// --- TOAST HOOK ---
-const useToast = () => {
-    const [toastState, setToastState] = useState({ show: false, title: '', description: '' });
-
-    const showToast = (title: string, description: string) => {
-        setToastState({ show: true, title, description });
-        setTimeout(() => {
-            setToastState(prev => ({ ...prev, show: false }));
-        }, 4000);
-    };
-
-    return { toast: toastState, showToast };
-}
 
 // --- HOOK UTAMA usePemesanan ---
 export const usePemesanan = () => {
@@ -133,7 +122,15 @@ export const usePemesanan = () => {
   const [filterStatus, setFilterStatus] = useState<'Semua' | 'Menunggu' | 'Disetujui' | 'Ditolak'>('Semua');
   const [sortOrder, setSortOrder] = useState<'Terbaru' | 'Terlama'>('Terbaru');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { toast, showToast } = useToast();
+  
+  // Fungsi helper untuk memanggil toast dari shadcn/ui
+  const fireToast = (title: string, description: string, variant: 'default' | 'destructive' = 'default') => {
+    showToast({
+      title,
+      description,
+      variant,
+    });
+  }
 
   const generateNewId = () => {
       const num = pemesananData.length + 1;
@@ -144,7 +141,6 @@ export const usePemesanan = () => {
   const addOrder = (values: FormValues) => {
     setIsLoading(true);
     setTimeout(() => {
-        // Konversi format konsumsi dari form ke format Pemesanan (Asumsi 'satuan' default adalah 'Pcs')
         const newKonsumsi: Konsumsi[] = values.konsumsi.map(k => ({
             jenis: k.jenis,
             qty: parseInt(k.qty, 10),
@@ -162,7 +158,7 @@ export const usePemesanan = () => {
             yangMengajukan: values.yangMengajukan,
             untukBagian: values.untukBagian,
             approval: values.approval,
-            status: 'Menunggu', // Default status for new order
+            status: 'Menunggu', 
             konsumsi: newKonsumsi,
             catatan: values.catatan,
             statusHistory: [{ 
@@ -175,8 +171,7 @@ export const usePemesanan = () => {
 
         setPemesananData(prev => [newPemesanan, ...prev]);
         setIsLoading(false);
-        showToast('Pesanan Terkirim', `Pesanan untuk acara "${newPemesanan.acara}" berhasil diajukan.`);
-        console.log("Pesanan baru ditambahkan:", newPemesanan);
+        fireToast('Pesanan Terkirim', `Pesanan untuk acara "${newPemesanan.acara}" berhasil diajukan.`, 'default');
     }, 500);
   };
   
@@ -184,9 +179,11 @@ export const usePemesanan = () => {
   const updateOrderStatus = (id: string, newStatus: 'Disetujui' | 'Ditolak') => {
     setIsLoading(true);
     setTimeout(() => {
+      let updatedAcara = '';
       setPemesananData(prevData =>
         prevData.map(item => {
           if (item.id === id) {
+            updatedAcara = item.acara;
             const newHistoryItem: StatusHistoryItem = {
               timestamp: new Date().toLocaleString('id-ID'),
               status: newStatus,
@@ -202,7 +199,7 @@ export const usePemesanan = () => {
         })
       );
       setIsLoading(false);
-      showToast('Status Diperbarui', `Pesanan ${id} berhasil diperbarui menjadi: ${newStatus}.`);
+      fireToast('Status Diperbarui', `Pesanan ${updatedAcara} (${id}) berhasil diperbarui menjadi: ${newStatus}.`, newStatus === 'Disetujui' ? 'default' : 'destructive');
     }, 500); 
   };
 
@@ -212,11 +209,11 @@ export const usePemesanan = () => {
     setTimeout(() => {
       setPemesananData(prevData => prevData.filter(item => item.id !== id));
       setIsLoading(false);
-      showToast('Pesanan Dihapus', `Pesanan ${acara} (${id}) berhasil dihapus.`);
+      fireToast('Pesanan Dihapus', `Pesanan ${acara} (${id}) berhasil dihapus.`, 'destructive');
     }, 500); 
   };
 
-  // Action: Export CSV (Logika sama dengan pemesanandashboard.tsx)
+  // Action: Export CSV
   const exportCSV = () => {
     const header = [
       'ID', 'Acara', 'Tanggal', 'Waktu', 'Lokasi', 'Tamu', 
@@ -253,7 +250,7 @@ export const usePemesanan = () => {
     link.click();
     document.body.removeChild(link);
     
-    showToast('Export Berhasil', 'Data pemesanan berhasil diekspor ke CSV.');
+    fireToast('Export Berhasil', 'Data pemesanan berhasil diekspor ke CSV.', 'default');
   };
   
   // Filtering and Sorting Logic
@@ -289,11 +286,10 @@ export const usePemesanan = () => {
 
 
   return {
-    riwayat: pemesananData, // Untuk dimuat di form (Load from Riwayat)
-    filteredAndSortedRiwayat, // Untuk dashboard
+    riwayat: pemesananData, 
+    filteredAndSortedRiwayat, 
     counts,
     isLoading,
-    toast,
     searchDate,
     filterStatus,
     sortOrder,
@@ -304,22 +300,22 @@ export const usePemesanan = () => {
         updateOrderStatus,
         deleteOrder,
         exportCSV,
-        addOrder, // Action baru untuk form
+        addOrder,
     },
   };
 };
 
-// Pastikan tipe data diekspor untuk PemesananForm.tsx dan PemesananDashboard.tsx
+// Pastikan tipe data diekspor
 export type { Pemesanan, Konsumsi, Status, StatusHistoryItem, FormValues };
 
-// Tambahkan ekspor dummy untuk DUMMY_RIWAYAT agar PemesananForm.tsx tidak error saat diimpor di AppWrapper
+// Ekspor dummy DUMMY_RIWAYAT untuk kompatibilitas form
 export const DUMMY_RIWAYAT = initialPemesananList.map(r => ({
   ...r,
   tanggalPermintaan: getCurrentDateFormatted(),
   tanggalPengiriman: r.tanggal,
   waktu: r.waktu === '10:00' ? 'Pagi' : 'Siang', // Konversi balik untuk Form
   konsumsi: r.konsumsi.map(k => ({
-    id: k.jenis.toLowerCase().includes('nasi kotak') ? 'std-nasi' : 'std-snack', // Dummy ID
+    id: k.jenis.toLowerCase().includes('nasi box') ? 'std-nasi' : 'std-snack', // Dummy ID
     jenis: k.jenis,
     qty: String(k.qty),
   }))
