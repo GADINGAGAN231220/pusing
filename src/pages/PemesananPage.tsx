@@ -8,7 +8,7 @@ import PemesananDashboard from '../components/pemesanan/PemesananDashboard';
 import PemesananForm from '../components/pemesanan/PemesananForm';
 
 // --- Placeholder Dialog Components ---
-const Dialog: React.FC<React.PropsWithChildren<{ open: boolean, onOpenChange: (open: boolean) => void }>> = ({ children, open, onOpenChange }) => {
+const Dialog: React.FC<React.PropsWithChildren<{ open: boolean; onOpenChange: (open: boolean) => void }>> = ({ children, open, onOpenChange }) => {
     if (!open) return null;
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => onOpenChange(false)}>
@@ -19,8 +19,8 @@ const Dialog: React.FC<React.PropsWithChildren<{ open: boolean, onOpenChange: (o
 const DialogContent: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className }) => (
     <div className={`bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto m-auto ${className}`} onClick={(e) => e.stopPropagation()}>{children}</div>
 );
-const DialogHeader: React.FC<React.PropsWithChildren<{}>> = ({ children }) => <div className="p-6 border-b">{children}</div>;
-const DialogTitle: React.FC<React.PropsWithChildren<{}>> = ({ children }) => <h3 className="text-xl font-bold text-gray-800">{children}</h3>;
+const DialogHeader: React.FC<React.PropsWithChildren<Record<string, never>>> = ({ children }) => <div className="p-6 border-b">{children}</div>;
+const DialogTitle: React.FC<React.PropsWithChildren<Record<string, never>>> = ({ children }) => <h3 className="text-xl font-bold text-gray-800">{children}</h3>;
 
 
 export default function PemesananPage() {
@@ -33,11 +33,13 @@ export default function PemesananPage() {
     counts,
     actions, 
     isLoading,
-    toast,
     searchDate,
     filterStatus,
     sortOrder,
   } = usePemesanan();
+
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   const handleStartNewOrder = () => setCurrentView('form');
   const returnToDashboard = () => setCurrentView('dashboard');
@@ -71,8 +73,21 @@ export default function PemesananPage() {
                         filterStatus={filterStatus}
                         sortOrder={sortOrder}
                         
+                        // Dark mode
+                        isDarkMode={isDarkMode}
+                        toggleDarkMode={toggleDarkMode}
+                        
                         // Teruskan actions yang dibutuhkan Dashboard
-                        actions={actions as any} // Cast as any karena tipe actions di hook lebih detail
+                        actions={actions as {
+                            setSearchDate: (date: string) => void;
+                            setFilterStatus: (status: string) => void;
+                            setSortOrder: (order: string) => void;
+                            updateOrderStatus: (id: string, status: string) => void;
+                            markAsDone: (id: string) => void;
+                            deleteOrder: (id: string, acara: string) => void;
+                            exportCSV: () => void;
+                            addOrder: (order: unknown) => void;
+                        }}
                     />
                 </motion.div>
             ) : (
@@ -85,27 +100,10 @@ export default function PemesananPage() {
                     className="max-w-xl mx-auto"
                 >
                     <PemesananForm 
-                        riwayat={riwayat} 
-                        onFormSubmit={actions.addOrder} 
+                        riwayat={riwayat as never} 
+                        onFormSubmit={(data) => actions.addOrder(data as never)} 
                         onReturnToDashboard={returnToDashboard}
                     />
-                </motion.div>
-            )}
-        </AnimatePresence>
-        
-        {/* Toast Notifikasi Global */}
-        <AnimatePresence>
-            {toast.show && (
-                <motion.div 
-                    key="toast-notification"
-                    initial={{ opacity: 0, y: 50 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    exit={{ opacity: 0, y: 20 }} 
-                    transition={{ duration: 0.3 }}
-                    className="fixed bottom-5 right-5 bg-slate-900 text-white p-4 rounded-lg shadow-lg z-50 w-80"
-                >
-                    <p className="font-bold">{toast.title}</p>
-                    <p className="text-sm text-slate-300">{toast.description}</p>
                 </motion.div>
             )}
         </AnimatePresence>

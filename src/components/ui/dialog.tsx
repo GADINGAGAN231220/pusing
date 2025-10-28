@@ -2,15 +2,15 @@ import React, { createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+const XIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 
 const DialogContext = createContext<{ open: boolean, onOpenChange: (open: boolean) => void} | undefined>(undefined);
 
-const Dialog = ({ open, onOpenChange, ...props }) => {
+const Dialog: React.FC<React.PropsWithChildren<{ open: boolean; onOpenChange: (open: boolean) => void }>> = ({ open, onOpenChange, ...props }) => {
     return <DialogContext.Provider value={{ open, onOpenChange }} {...props} />;
 };
 
-const DialogContent = ({ className, children, ...props }) => {
+const DialogContent: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className, children, ...props }) => {
     const context = useContext(DialogContext);
     if (!context) {
         throw new Error("DialogContent must be used within a DialogProvider");
@@ -33,8 +33,8 @@ const DialogContent = ({ className, children, ...props }) => {
     );
 };
 
-const DialogHeader = ({ className, ...props }) => <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />;
-const DialogTitle = ({ className, ...props }) => <h2 className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />;
-const DialogDescription = ({ className, ...props }) => <p className={cn("text-sm text-slate-500", className)} {...props} />;
+const DialogHeader: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className, ...props }) => <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />;
+const DialogTitle: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className, ...props }) => <h2 className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />;
+const DialogDescription: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className, ...props }) => <p className={cn("text-sm text-slate-500", className)} {...props} />;
 
 export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription };

@@ -1,18 +1,22 @@
 import React, { useState, useMemo, useEffect, forwardRef, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // Impor hook form, zod, dll.
-import { useForm, useFieldArray, Controller, useWatch } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form"; // Hapus useWatch
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { type ClassValue } from 'clsx'; // Import ClassValue untuk cn
 
 // --- UTILITY: Class Name Merger ---
-function cn(...inputs: (string | number | boolean | null | undefined | (string | number | boolean | null | undefined)[] | { [key: string]: any })[]) {
+// Perbaiki tipe input untuk cn
+function cn(...inputs: ClassValue[]) {
     const classes = new Set<string>();
     inputs.forEach(arg => {
         if (!arg) return;
         if (typeof arg === 'string' || typeof arg === 'number') { classes.add(String(arg)); }
         else if (Array.isArray(arg)) { arg.forEach(c => c && classes.add(String(c))); }
-        else if (typeof arg === 'object') { Object.keys(arg).forEach(key => arg[key] && classes.add(key)); }
+        else if (typeof arg === 'object' && arg !== null) { // Tambahkan pengecekan null
+             Object.keys(arg).forEach(key => (arg as Record<string, unknown>)[key] && classes.add(key)); // Cast ke Record
+         }
     });
     return Array.from(classes).join(' ');
 }
@@ -36,8 +40,35 @@ const MASTER_KONSUMSI = [
 ];
 const getKonsumsiById = (id: string) => id ? MASTER_KONSUMSI.find(item => item.id === id) : undefined;
 
-// Dummy data untuk riwayat
-const DUMMY_RIWAYAT = [
+// Dummy data untuk riwayat (tipe disesuaikan)
+interface RiwayatItemKonsumsi {
+    id?: string;
+    jenis?: string;
+    qty?: string;
+    satuan?: string;
+}
+interface RiwayatPemesanan {
+    id: string;
+    acara: string;
+    tanggalPermintaan: string;
+    tanggalPengiriman: string;
+    waktu: string;
+    jamPengiriman?: string;
+    lokasi: string;
+    tamu: string; // Bisa lebih spesifik jika perlu
+    yangMengajukan: string;
+    untukBagian: string;
+    approval: string;
+    konsumsi: RiwayatItemKonsumsi[];
+    catatan?: string;
+    status: string; // Bisa lebih spesifik
+    statusHistory: Array<{
+        timestamp: string;
+        status: string;
+        changedBy: string;
+    }>; // Tipe history bisa didefinisikan lebih detail
+}
+const DUMMY_RIWAYAT: RiwayatPemesanan[] = [
     { id: 'ord-2', acara: 'Pelatihan Internal TI', tanggalPermintaan: '2025-10-21', tanggalPengiriman: '2025-10-28', waktu: 'Siang', jamPengiriman: '12:30', lokasi: 'Ruang Training C', tamu: 'standar', yangMengajukan: 'Riza Ilhamsyah', untukBagian: 'Dep. TI', approval: 'Jojok Satriadi (1140122)', konsumsi: [{ id: 'std-nasi', jenis: 'Nasi Box Standar', qty: '25', satuan: 'kotak' }, { id: 'std-kopi', jenis: 'Kopi & Teh (Sachet)', qty: '25', satuan: 'pax' }], status: 'Disetujui', statusHistory: [] },
 ];
 
@@ -67,7 +98,8 @@ const formSchema = z.object({
     catatan: z.string().optional(),
 });
 
-type PemesananFormData = z.infer<typeof formSchema>;
+// Ekspor tipe FormData
+export type PemesananFormData = z.infer<typeof formSchema>;
 
 // --- KOMPONEN UI DASAR & IKON ---
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> { variant?: 'primary' | 'destructive' | 'outline' | 'secondary' | 'ghost'; size?: 'default' | 'sm' | 'lg'; }
@@ -91,7 +123,7 @@ Input.displayName = 'Input';
 const Label = forwardRef<HTMLLabelElement, React.LabelHTMLAttributes<HTMLLabelElement>>(({ className, ...props }, ref) => <label ref={ref} className={cn("text-sm font-medium leading-none text-gray-700", className)} {...props} />);
 Label.displayName = 'Label';
 
-// Icons
+// Icons (Sama seperti sebelumnya)
 type IconProps = { className?: string };
 const CheckCircle2 = ({ className = "" }: IconProps) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" /><path d="m9 12 2 2 4-4" /></svg>;
 const ChevronDown = ({ className = "" }: IconProps) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>;
@@ -214,7 +246,7 @@ const QtyStepper: React.FC<QtyStepperProps> = ({ value, onChange, error }) => {
 
 // Tipe props untuk PemesananForm
 interface PemesananFormProps {
-    riwayat?: any[];
+    riwayat?: RiwayatPemesanan[]; // Gunakan tipe RiwayatPemesanan
     onFormSubmit: (data: PemesananFormData) => void;
     onReturnToDashboard: () => void;
 }
@@ -299,7 +331,12 @@ const PemesananForm: React.FC<PemesananFormProps> = ({ riwayat = DUMMY_RIWAYAT, 
             acara: selectedRiwayat.acara, lokasi: selectedRiwayat.lokasi, tamu: selectedRiwayat.tamu, waktu: selectedRiwayat.waktu,
             yangMengajukan: selectedRiwayat.yangMengajukan, untukBagian: selectedRiwayat.untukBagian, approval: selectedRiwayat.approval,
             catatan: selectedRiwayat.catatan || "",
-            konsumsi: (selectedRiwayat.konsumsi || []).map((k: any) => ({ id: k.id || "", jenis: k.jenis || getKonsumsiById(k.id)?.nama || "", satuan: k.satuan || "", qty: k.qty || "1" })), // Jangan isi satuan otomatis saat load
+            konsumsi: (selectedRiwayat.konsumsi || []).map((k: RiwayatItemKonsumsi) => ({ // Gunakan RiwayatItemKonsumsi
+                id: k.id || "",
+                jenis: k.jenis || getKonsumsiById(k.id || "")?.nama || "", // Beri default "" untuk id
+                satuan: k.satuan || "",
+                qty: k.qty || "1"
+            })),
             tanggalPermintaan: getTodayDate(), tanggalPengiriman: getTomorrowDate(), jamPengiriman: selectedRiwayat.jamPengiriman || "",
         });
         form.setValue("waktu", selectedRiwayat.waktu || "", { shouldValidate: true });
@@ -328,8 +365,8 @@ const PemesananForm: React.FC<PemesananFormProps> = ({ riwayat = DUMMY_RIWAYAT, 
             console.error("Validasi Gagal:", form.formState.errors);
             const errorKeys = Object.keys(form.formState.errors);
              if (errorKeys.length > 0) {
-                 try { // @ts-ignore
-                     form.setFocus(errorKeys[0] as keyof PemesananFormData);
+                 try {
+                     form.setFocus(errorKeys[0] as never);
                  } catch (e) { console.error("Gagal fokus:", e); }
              }
         }
@@ -337,7 +374,7 @@ const PemesananForm: React.FC<PemesananFormProps> = ({ riwayat = DUMMY_RIWAYAT, 
     const handlePrevStep = () => setStep((prev) => prev - 1);
     const handleFinalSubmit = (values: PemesananFormData) => {
         const finalValuesWithNamaSatuan = { ...values, konsumsi: values.konsumsi.map(item => { const masterItem = getKonsumsiById(item.id); return { ...item, jenis: item.jenis || masterItem?.nama || 'N/A', satuan: item.satuan || 'unit' }; }) };
-        onFormSubmit(finalValuesWithNamaSatuan as any);
+        onFormSubmit(finalValuesWithNamaSatuan as PemesananFormData); // Cast ke PemesananFormData
         setStep(3);
     };
 
@@ -522,7 +559,8 @@ const PemesananForm: React.FC<PemesananFormProps> = ({ riwayat = DUMMY_RIWAYAT, 
                                             const displaySatuan = item.satuan || 'unit'; // Tampilkan satuan yang dipilih user
                                             return (
                                                 <div key={index} className="flex items-center gap-4 p-3 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                                    <img src={masterItem?.img || 'https://placehold.co/100x100/CCCCCC/FFFFFF?text=N/A'} alt={displayName} className="h-14 w-14 rounded-md object-cover border bg-gray-200" onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/100x100/CCCCCC/FFFFFF?text=Err'} />
+                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={masterItem?.img || 'https://placehold.co/100x100/CCCCCC/FFFFFF?text=N/A'} alt={displayName || 'Gambar Konsumsi'} className="h-14 w-14 rounded-md object-cover border bg-gray-200" onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/100x100/CCCCCC/FFFFFF?text=Err'} />
                                                     <div className="flex-1">
                                                         <span className="font-semibold text-gray-800 text-base">{displayName}</span>
                                                         <span className="block text-xs text-gray-500">{masterItem ? `Level Tamu Min: ${Object.keys(TINGKAT_TAMU).find(k => TINGKAT_TAMU[k] === masterItem.tamuMinLevel) || 'N/A'}` : ''}</span>
@@ -565,4 +603,3 @@ const PemesananForm: React.FC<PemesananFormProps> = ({ riwayat = DUMMY_RIWAYAT, 
 };
 
 export default PemesananForm;
-

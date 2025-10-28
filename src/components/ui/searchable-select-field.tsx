@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Controller, Control, FieldValues, Path } from "react-hook-form";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import SearchableSelect from "@/components/pemesanan/SearchableSelect";
 import { FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 
 interface Option {
@@ -37,7 +37,7 @@ export function SearchableSelectField<T extends FieldValues>({
               placeholder={placeholder}
               options={options}
               value={field.value}
-              onValueChange={field.onChange}
+              onChange={field.onChange}
             />
           )}
         />

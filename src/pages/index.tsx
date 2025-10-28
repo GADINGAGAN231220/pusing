@@ -88,15 +88,21 @@ export default function PemesananPage() {
                       isDarkMode={isDarkMode} // Teruskan state dark mode
                       toggleDarkMode={toggleDarkMode} // Teruskan toggler dark mode
                       
-                      actions={actions as any}
+                      actions={actions as {
+                          setSearchDate: (date: string) => void;
+                          setFilterStatus: (status: string) => void;
+                          setSortOrder: (order: string) => void;
+                          updateOrderStatus: (id: string, status: string) => void;
+                          markAsDone: (id: string) => void;
+                          deleteOrder: (id: string, acara: string) => void;
+                          exportCSV: () => void;
+                          addOrder: (order: unknown) => void;
+                      }}
                   />
               ) : (
                   <PemesananForm 
-                      riwayat={riwayat} 
-                      onFormSubmit={(data) => {
-                        actions.addOrder(data); 
-                        returnToDashboard(); // Kembali ke dashboard setelah submit
-                      }}
+                      riwayat={riwayat as never} 
+                      onFormSubmit={(data) => actions.addOrder(data as never)} 
                       onReturnToDashboard={returnToDashboard}
                   />
               )}
