@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // Pastikan path ini benar
 import { usePemesanan } from '../hooks/usePemesanan'; 
@@ -7,20 +7,7 @@ import { usePemesanan } from '../hooks/usePemesanan';
 import PemesananDashboard from '../components/pemesanan/PemesananDashboard';
 import PemesananForm from '../components/pemesanan/PemesananForm';
 
-// --- Placeholder Dialog Components ---
-const Dialog: React.FC<React.PropsWithChildren<{ open: boolean; onOpenChange: (open: boolean) => void }>> = ({ children, open, onOpenChange }) => {
-    if (!open) return null;
-    return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => onOpenChange(false)}>
-            {children}
-        </div>
-    );
-};
-const DialogContent: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className }) => (
-    <div className={`bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto m-auto ${className}`} onClick={(e) => e.stopPropagation()}>{children}</div>
-);
-const DialogHeader: React.FC<React.PropsWithChildren<Record<string, never>>> = ({ children }) => <div className="p-6 border-b">{children}</div>;
-const DialogTitle: React.FC<React.PropsWithChildren<Record<string, never>>> = ({ children }) => <h3 className="text-xl font-bold text-gray-800">{children}</h3>;
+// (Removed unused placeholder Dialog components)
 
 
 export default function PemesananPage() {
@@ -40,6 +27,17 @@ export default function PemesananPage() {
 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+
+    // Apply/Remove `dark` class on the root element so Tailwind's dark: utilities take effect
+    useEffect(() => {
+        try {
+            const root = document.documentElement;
+            if (isDarkMode) root.classList.add('dark');
+            else root.classList.remove('dark');
+        } catch {
+            // ignore server-side / non-DOM environments
+        }
+    }, [isDarkMode]);
 
   const handleStartNewOrder = () => setCurrentView('form');
   const returnToDashboard = () => setCurrentView('dashboard');
